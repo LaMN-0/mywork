@@ -78,7 +78,7 @@
       font-weight: bold;
       text-align: center;
       outline: none;
-      user-select: text; /* 入力欄はテキスト選択許可 */
+      user-select: text;
     }
 
     .btn-goal-set {
@@ -264,12 +264,33 @@
       padding: 16px;
     }
 
+    .stats-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #2c3e50;
+      padding-bottom: 6px;
+      margin-bottom: 12px;
+    }
+
     .stats-title {
       font-size: 1rem;
       color: #f39c12;
-      margin-bottom: 12px;
-      border-bottom: 1px solid #2c3e50;
-      padding-bottom: 6px;
+    }
+
+    .btn-clear-all {
+      background: transparent;
+      border: 1px solid #e74c3c;
+      color: #e74c3c;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .btn-clear-all:active {
+      background: rgba(231, 76, 60, 0.2);
     }
 
     .stats-grid {
@@ -338,12 +359,11 @@
       <h1>HASTUR HIT COUNTER</h1>
     </header>
 
-    <!-- 目標設定カード -->
     <div class="goal-card">
       <div class="goal-input-row">
         <span class="goal-label">🎯 目標ヒット数:</span>
         <input type="number" id="goalInput" class="goal-input" min="1" value="100">
-        <button class="btn-goal-set" id="btnGoalSet">設定</button>
+        <button class="btn-goal-set" id="btnGoalSet" type="button">設定</button>
       </div>
       <div class="goal-status-row">
         <span>目標まであと:</span>
@@ -368,23 +388,26 @@
         </div>
       </div>
       
-      <button class="btn-main" id="btnHit">＋1 ヒット</button>
+      <button class="btn-main" id="btnHit" type="button">＋1 ヒット</button>
 
       <div class="calc-row">
-        <button class="btn-calc" id="btnDivide">÷2</button>
-        <button class="btn-calc" id="btnAddFive">+5</button>
+        <button class="btn-calc" id="btnDivide" type="button">÷2</button>
+        <button class="btn-calc" id="btnAddFive" type="button">+5</button>
       </div>
 
-      <button class="btn-undo" id="btnUndo">1つ取り消し (-1)</button>
+      <button class="btn-undo" id="btnUndo" type="button">1つ取り消し (-1)</button>
 
       <div class="action-row">
-        <button class="btn-sub" id="btnSave">記録する</button>
-        <button class="btn-sub btn-danger" id="btnReset">リセット</button>
+        <button class="btn-sub" id="btnSave" type="button">記録する</button>
+        <button class="btn-sub btn-danger" id="btnReset" type="button">表示クリア</button>
       </div>
     </div>
 
     <div class="stats-card">
-      <div class="stats-title">統計データ</div>
+      <div class="stats-header">
+        <span class="stats-title">統計データ</span>
+        <button class="btn-clear-all" id="btnClearAll" type="button">全データ完全初期化</button>
+      </div>
       <div class="stats-grid">
         <div class="stat-box">
           <div class="stat-val" id="statMatches">0</div>
@@ -402,7 +425,7 @@
     </div>
 
     <div class="history-card">
-      <div class="stats-title">過去の試合履歴</div>
+      <div class="stats-title" style="margin-bottom: 12px; border-bottom: 1px solid #2c3e50; padding-bottom: 6px;">過去の試合履歴</div>
       <ul class="history-list" id="historyList">
         <li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>
       </ul>
@@ -411,37 +434,43 @@
     <div class="shortcuts-guide">
       【キーボード操作】<br>
       [Space] / [Enter] : +1ヒット | [Z] / [Backspace] : -1<br>
-      [R] : 記録する | [L] : リセット
+      [R] : 記録する | [L] : 表示クリア
     </div>
   </div>
 
   <script>
-    function loadStorage(key, defaultValue) {
+    function safeStorageGet(key, fallback) {
       try {
-        var val = localStorage.getItem(key);
-        return val !== null ? val : defaultValue;
+        var v = localStorage.getItem(key);
+        return v !== null ? v : fallback;
       } catch (e) {
-        return defaultValue;
+        return fallback;
       }
     }
 
-    function saveStorage(key, value) {
+    function safeStorageSet(key, value) {
       try {
         localStorage.setItem(key, value);
       } catch (e) {}
     }
 
+    function safeStorageClear() {
+      try {
+        localStorage.clear();
+      } catch (e) {}
+    }
+
     var currentMatchCount = 0;
-    var baseTotalHits = parseInt(loadStorage("hastur_base_total", "0"), 10);
+    var baseTotalHits = parseInt(safeStorageGet("hastur_base_total", "0"), 10);
     if (isNaN(baseTotalHits)) baseTotalHits = 0;
 
-    var targetGoal = parseInt(loadStorage("hastur_target_goal", "100"), 10);
+    var targetGoal = parseInt(safeStorageGet("hastur_target_goal", "100"), 10);
     if (isNaN(targetGoal) || targetGoal <= 0) targetGoal = 100;
 
     var historyData = [];
     try {
-      var rawHistory = loadStorage("hastur_history", "[]");
-      historyData = JSON.parse(rawHistory);
+      var raw = safeStorageGet("hastur_history", "[]");
+      historyData = JSON.parse(raw);
       if (!Array.isArray(historyData)) historyData = [];
     } catch (e) {
       historyData = [];
@@ -456,6 +485,7 @@
     var elBtnUndo = document.getElementById("btnUndo");
     var elBtnSave = document.getElementById("btnSave");
     var elBtnReset = document.getElementById("btnReset");
+    var elBtnClearAll = document.getElementById("btnClearAll");
     var elHistoryList = document.getElementById("historyList");
     var elStatMatches = document.getElementById("statMatches");
     var elStatAvg = document.getElementById("statAvg");
@@ -468,98 +498,110 @@
 
     if (elGoalInput) elGoalInput.value = targetGoal;
 
-    function updateDisplay() {
-      var calculatedTotal = baseTotalHits + currentMatchCount;
-      if (elMatchHits) elMatchHits.textContent = currentMatchCount;
-      if (elTotalHits) elTotalHits.textContent = calculatedTotal;
-      if (elCurrentMatchTag) elCurrentMatchTag.textContent = "第 " + (historyData.length + 1) + " 試合";
+    function renderAll() {
+      try {
+        var calculatedTotal = baseTotalHits + currentMatchCount;
+        if (elMatchHits) elMatchHits.textContent = currentMatchCount;
+        if (elTotalHits) elTotalHits.textContent = calculatedTotal;
+        if (elCurrentMatchTag) elCurrentMatchTag.textContent = "第 " + (historyData.length + 1) + " 試合";
 
-      // 目標残り数の計算
-      var remain = targetGoal - calculatedTotal;
-      if (elRemainText) {
-        if (remain <= 0) {
-          elRemainText.textContent = "🎉 目標達成！";
-          elRemainText.className = "remain-val goal-achieved";
-        } else {
-          elRemainText.textContent = remain + " Hits";
-          elRemainText.className = "remain-val";
+        var remain = targetGoal - calculatedTotal;
+        if (elRemainText) {
+          if (remain <= 0) {
+            elRemainText.textContent = "🎉 目標達成！";
+            elRemainText.className = "remain-val goal-achieved";
+          } else {
+            elRemainText.textContent = remain + " Hits";
+            elRemainText.className = "remain-val";
+          }
         }
+
+        if (elProgressBar) {
+          var pct = targetGoal > 0 ? Math.min(100, Math.max(0, (calculatedTotal / targetGoal) * 100)) : 100;
+          elProgressBar.style.width = pct + "%";
+        }
+
+        if (elHistoryList) {
+          elHistoryList.innerHTML = "";
+          if (historyData.length === 0) {
+            elHistoryList.innerHTML = '<li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>';
+          } else {
+            historyData.slice().reverse().forEach(function(hits, idx) {
+              var matchNum = historyData.length - idx;
+              var li = document.createElement("li");
+              li.className = "history-item";
+              li.innerHTML = "<span>第 " + matchNum + " 試合</span><strong>" + hits + " Hits</strong>";
+              elHistoryList.appendChild(li);
+            });
+          }
+        }
+
+        var matches = historyData.length;
+        var total = historyData.reduce(function(a, b) { return a + b; }, 0);
+        var avg = matches > 0 ? (total / matches).toFixed(1) : "0.0";
+        var max = matches > 0 ? Math.max.apply(null, historyData) : 0;
+
+        if (elStatMatches) elStatMatches.textContent = matches;
+        if (elStatAvg) elStatAvg.textContent = avg;
+        if (elStatMax) elStatMax.textContent = max;
+      } catch (e) {
+        console.error(e);
       }
-
-      // プログレスバーの更新
-      if (elProgressBar) {
-        var pct = targetGoal > 0 ? Math.min(100, Math.max(0, (calculatedTotal / targetGoal) * 100)) : 100;
-        elProgressBar.style.width = pct + "%";
-      }
-    }
-
-    function updateHistoryUI() {
-      if (!elHistoryList) return;
-      elHistoryList.innerHTML = "";
-      if (historyData.length === 0) {
-        elHistoryList.innerHTML = '<li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>';
-      } else {
-        historyData.slice().reverse().forEach(function(hits, idx) {
-          var matchNum = historyData.length - idx;
-          var li = document.createElement("li");
-          li.className = "history-item";
-          li.innerHTML = "<span>第 " + matchNum + " 試合</span><strong>" + hits + " Hits</strong>";
-          elHistoryList.appendChild(li);
-        });
-      }
-
-      var matches = historyData.length;
-      var total = historyData.reduce(function(a, b) { return a + b; }, 0);
-      var avg = matches > 0 ? (total / matches).toFixed(1) : "0.0";
-      var max = matches > 0 ? Math.max.apply(null, historyData) : 0;
-
-      if (elStatMatches) elStatMatches.textContent = matches;
-      if (elStatAvg) elStatAvg.textContent = avg;
-      if (elStatMax) elStatMax.textContent = max;
     }
 
     function addHit() {
       currentMatchCount++;
-      updateDisplay();
+      renderAll();
     }
 
     function divideHit() {
       if (currentMatchCount > 0) {
         currentMatchCount = Math.floor(currentMatchCount / 2);
-        updateDisplay();
+        renderAll();
       }
     }
 
     function addFiveHits() {
       currentMatchCount += 5;
-      updateDisplay();
+      renderAll();
     }
 
     function undoHit() {
       if (currentMatchCount > 0) {
         currentMatchCount--;
-        updateDisplay();
+        renderAll();
       }
     }
 
     function saveMatch() {
       historyData.push(currentMatchCount);
-      saveStorage("hastur_history", JSON.stringify(historyData));
+      safeStorageSet("hastur_history", JSON.stringify(historyData));
       
       baseTotalHits += currentMatchCount;
-      saveStorage("hastur_base_total", baseTotalHits.toString());
+      safeStorageSet("hastur_base_total", baseTotalHits.toString());
 
       currentMatchCount = 0;
-      updateDisplay();
-      updateHistoryUI();
+      renderAll();
     }
 
     function resetCurrentCounts() {
       if (confirm("現在の試合とヒット数の表示を0にクリアしますか？（過去の試合履歴は残ります）")) {
         currentMatchCount = 0;
         baseTotalHits = 0;
-        saveStorage("hastur_base_total", "0");
-        updateDisplay();
+        safeStorageSet("hastur_base_total", "0");
+        renderAll();
+      }
+    }
+
+    function clearAllData() {
+      if (confirm("【確認】全データ（過去履歴・累計ヒット・目標設定）を削除して完全に初期化しますか？")) {
+        safeStorageClear();
+        currentMatchCount = 0;
+        baseTotalHits = 0;
+        targetGoal = 100;
+        historyData = [];
+        if (elGoalInput) elGoalInput.value = 100;
+        renderAll();
       }
     }
 
@@ -568,10 +610,10 @@
       var val = parseInt(elGoalInput.value, 10);
       if (!isNaN(val) && val > 0) {
         targetGoal = val;
-        saveStorage("hastur_target_goal", targetGoal.toString());
-        updateDisplay();
+        safeStorageSet("hastur_target_goal", targetGoal.toString());
+        renderAll();
       }
-      elGoalInput.blur(); // 入力後にフォーカスを外してショートカットキーを即座に有効化
+      elGoalInput.blur();
     }
 
     if (elBtnHit) elBtnHit.addEventListener("click", addHit);
@@ -580,11 +622,13 @@
     if (elBtnUndo) elBtnUndo.addEventListener("click", undoHit);
     if (elBtnSave) elBtnSave.addEventListener("click", saveMatch);
     if (elBtnReset) elBtnReset.addEventListener("click", resetCurrentCounts);
+    if (elBtnClearAll) elBtnClearAll.addEventListener("click", clearAllData);
     if (elBtnGoalSet) elBtnGoalSet.addEventListener("click", setGoal);
 
     if (elGoalInput) {
       elGoalInput.addEventListener("keydown", function(e) {
         if (e.key === "Enter") {
+          e.preventDefault();
           setGoal();
         }
       });
@@ -593,7 +637,7 @@
     window.addEventListener("keydown", function(e) {
       var activeEl = document.activeElement;
       if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
-        return; // 目標入力欄にカーソルがある間はショートカットをスキップ
+        return;
       }
 
       if (e.code === "Space" || e.code === "Enter") {
@@ -611,8 +655,7 @@
       }
     });
 
-    updateDisplay();
-    updateHistoryUI();
+    renderAll();
   </script>
 </body>
 </html>
