@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ハスター 触手ヒットカウンター</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      background-color: #0b0c10;
+      color: #c5c6c7;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px 15px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    header {
+      text-align: center;
+      padding: 5px 0;
+    }
+
+    h1 {
+      color: #f39c12;
+      font-size: 1.5rem;
+      letter-spacing: 2px;
+      text-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+    }
+
+    /* 目標設定カード */
+    .goal-card {
+      background: #1f2833;
+      border: 1px solid #2c3e50;
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .goal-input-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .goal-label {
+      font-size: 0.85rem;
+      color: #f39c12;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .goal-input {
+      flex: 1;
+      background: #0b0c10;
+      border: 1px solid #45a29e;
+      color: #66fcf1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      text-align: center;
+      outline: none;
+      user-select: text; /* 入力欄はテキスト選択許可 */
+    }
+
+    .btn-goal-set {
+      padding: 6px 14px;
+      background: #45a29e;
+      border: none;
+      color: #0b0c10;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+
+    .goal-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      color: #8892b0;
+    }
+
+    .remain-val {
+      color: #66fcf1;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+    .goal-achieved {
+      color: #2ecc71;
+      font-weight: bold;
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background: #0b0c10;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid #2c3e50;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #d35400, #f39c12);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    .counter-card {
+      background: #1f2833;
+      border: 2px solid #f39c12;
+      border-radius: 16px;
+      padding: 20px 16px;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(243, 156, 18, 0.15);
+    }
+
+    .match-tag {
+      display: inline-block;
+      background: rgba(243, 156, 18, 0.15);
+      border: 1px solid #f39c12;
+      color: #f39c12;
+      font-size: 0.95rem;
+      font-weight: bold;
+      padding: 4px 16px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+
+    .display-group {
+      display: flex;
+      gap: 10px;
+      margin: 8px 0 16px 0;
+    }
+
+    .display-box {
+      flex: 1;
+      background: #0b0c10;
+      border-radius: 12px;
+      padding: 12px 8px;
+      border: 1px solid #2c3e50;
+    }
+
+    .counter-label {
+      font-size: 0.8rem;
+      color: #8892b0;
+      margin-bottom: 4px;
+    }
+
+    .counter-display {
+      font-size: 2.8rem;
+      font-weight: 800;
+      color: #f39c12;
+      line-height: 1.1;
+      text-shadow: 0 0 10px rgba(243, 156, 18, 0.4);
+    }
+
+    .btn-main {
+      width: 100%;
+      height: 90px;
+      background: linear-gradient(135deg, #d35400, #f39c12);
+      border: none;
+      border-radius: 14px;
+      color: #ffffff;
+      font-size: 2rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 6px 15px rgba(211, 84, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-main:active {
+      transform: translateY(3px);
+      box-shadow: 0 2px 8px rgba(211, 84, 0, 0.4);
+    }
+
+    .calc-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .btn-calc {
+      flex: 1;
+      padding: 12px;
+      background: #0b0c10;
+      border: 1px solid #f39c12;
+      color: #f39c12;
+      border-radius: 10px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-calc:active {
+      background: #1f2833;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .btn-sub {
+      flex: 1;
+      padding: 14px 10px;
+      border: 1px solid #45a29e;
+      background: #0b0c10;
+      color: #66fcf1;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .btn-sub:active {
+      background: #1f2833;
+    }
+
+    .btn-danger {
+      border-color: #e74c3c;
+      color: #e74c3c;
+    }
+
+    .btn-undo {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: 1px dashed #8892b0;
+      color: #8892b0;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-size: 0.85rem;
+      cursor: pointer;
+    }
+
+    .stats-card {
+      background: #1f2833;
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .stats-title {
+      font-size: 1rem;
+      color: #f39c12;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #2c3e50;
+      padding-bottom: 6px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      text-align: center;
+      gap: 8px;
+    }
+
+    .stat-box {
+      background: #0b0c10;
+      padding: 8px;
+      border-radius: 8px;
+    }
+
+    .stat-val {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #66fcf1;
+    }
+
+    .stat-lbl {
+      font-size: 0.75rem;
+      color: #8892b0;
+      margin-top: 2px;
+    }
+
+    .history-card {
+      background: #1f2833;
+      border-radius: 12px;
+      padding: 16px;
+      flex-grow: 1;
+    }
+
+    .history-list {
+      list-style: none;
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      background: #0b0c10;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .shortcuts-guide {
+      font-size: 0.75rem;
+      color: #666666;
+      text-align: center;
+      margin-top: 10px;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>HASTUR HIT COUNTER</h1>
+    </header>
+
+    <!-- 目標設定カード -->
+    <div class="goal-card">
+      <div class="goal-input-row">
+        <span class="goal-label">🎯 目標ヒット数:</span>
+        <input type="number" id="goalInput" class="goal-input" min="1" value="100">
+        <button class="btn-goal-set" id="btnGoalSet">設定</button>
+      </div>
+      <div class="goal-status-row">
+        <span>目標まであと:</span>
+        <span id="remainText" class="remain-val">100 Hits</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBar"></div>
+      </div>
+    </div>
+
+    <div class="counter-card">
+      <div class="match-tag" id="currentMatchTag">第 1 試合</div>
+      
+      <div class="display-group">
+        <div class="display-box">
+          <div class="counter-label">現在の試合</div>
+          <div class="counter-display" id="matchHits">0</div>
+        </div>
+        <div class="display-box">
+          <div class="counter-label">現在のヒット数</div>
+          <div class="counter-display" id="totalHits">0</div>
+        </div>
+      </div>
+      
+      <button class="btn-main" id="btnHit">＋1 ヒット</button>
+
+      <div class="calc-row">
+        <button class="btn-calc" id="btnDivide">÷2</button>
+        <button class="btn-calc" id="btnAddFive">+5</button>
+      </div>
+
+      <button class="btn-undo" id="btnUndo">1つ取り消し (-1)</button>
+
+      <div class="action-row">
+        <button class="btn-sub" id="btnSave">記録する</button>
+        <button class="btn-sub btn-danger" id="btnReset">リセット</button>
+      </div>
+    </div>
+
+    <div class="stats-card">
+      <div class="stats-title">統計データ</div>
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-val" id="statMatches">0</div>
+          <div class="stat-lbl">完了試合数</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statAvg">0.0</div>
+          <div class="stat-lbl">平均ヒット</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="statMax">0</div>
+          <div class="stat-lbl">最多ヒット</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="history-card">
+      <div class="stats-title">過去の試合履歴</div>
+      <ul class="history-list" id="historyList">
+        <li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>
+      </ul>
+    </div>
+
+    <div class="shortcuts-guide">
+      【キーボード操作】<br>
+      [Space] / [Enter] : +1ヒット | [Z] / [Backspace] : -1<br>
+      [R] : 記録する | [L] : リセット
+    </div>
+  </div>
+
+  <script>
+    function loadStorage(key, defaultValue) {
+      try {
+        var val = localStorage.getItem(key);
+        return val !== null ? val : defaultValue;
+      } catch (e) {
+        return defaultValue;
+      }
+    }
+
+    function saveStorage(key, value) {
+      try {
+        localStorage.setItem(key, value);
+      } catch (e) {}
+    }
+
+    var currentMatchCount = 0;
+    var baseTotalHits = parseInt(loadStorage("hastur_base_total", "0"), 10);
+    if (isNaN(baseTotalHits)) baseTotalHits = 0;
+
+    var targetGoal = parseInt(loadStorage("hastur_target_goal", "100"), 10);
+    if (isNaN(targetGoal) || targetGoal <= 0) targetGoal = 100;
+
+    var historyData = [];
+    try {
+      var rawHistory = loadStorage("hastur_history", "[]");
+      historyData = JSON.parse(rawHistory);
+      if (!Array.isArray(historyData)) historyData = [];
+    } catch (e) {
+      historyData = [];
+    }
+
+    var elMatchHits = document.getElementById("matchHits");
+    var elTotalHits = document.getElementById("totalHits");
+    var elCurrentMatchTag = document.getElementById("currentMatchTag");
+    var elBtnHit = document.getElementById("btnHit");
+    var elBtnDivide = document.getElementById("btnDivide");
+    var elBtnAddFive = document.getElementById("btnAddFive");
+    var elBtnUndo = document.getElementById("btnUndo");
+    var elBtnSave = document.getElementById("btnSave");
+    var elBtnReset = document.getElementById("btnReset");
+    var elHistoryList = document.getElementById("historyList");
+    var elStatMatches = document.getElementById("statMatches");
+    var elStatAvg = document.getElementById("statAvg");
+    var elStatMax = document.getElementById("statMax");
+
+    var elGoalInput = document.getElementById("goalInput");
+    var elBtnGoalSet = document.getElementById("btnGoalSet");
+    var elRemainText = document.getElementById("remainText");
+    var elProgressBar = document.getElementById("progressBar");
+
+    if (elGoalInput) elGoalInput.value = targetGoal;
+
+    function updateDisplay() {
+      var calculatedTotal = baseTotalHits + currentMatchCount;
+      if (elMatchHits) elMatchHits.textContent = currentMatchCount;
+      if (elTotalHits) elTotalHits.textContent = calculatedTotal;
+      if (elCurrentMatchTag) elCurrentMatchTag.textContent = "第 " + (historyData.length + 1) + " 試合";
+
+      // 目標残り数の計算
+      var remain = targetGoal - calculatedTotal;
+      if (elRemainText) {
+        if (remain <= 0) {
+          elRemainText.textContent = "🎉 目標達成！";
+          elRemainText.className = "remain-val goal-achieved";
+        } else {
+          elRemainText.textContent = remain + " Hits";
+          elRemainText.className = "remain-val";
+        }
+      }
+
+      // プログレスバーの更新
+      if (elProgressBar) {
+        var pct = targetGoal > 0 ? Math.min(100, Math.max(0, (calculatedTotal / targetGoal) * 100)) : 100;
+        elProgressBar.style.width = pct + "%";
+      }
+    }
+
+    function updateHistoryUI() {
+      if (!elHistoryList) return;
+      elHistoryList.innerHTML = "";
+      if (historyData.length === 0) {
+        elHistoryList.innerHTML = '<li style="color: #666666; text-align: center; font-size: 0.85rem;">履歴はありません</li>';
+      } else {
+        historyData.slice().reverse().forEach(function(hits, idx) {
+          var matchNum = historyData.length - idx;
+          var li = document.createElement("li");
+          li.className = "history-item";
+          li.innerHTML = "<span>第 " + matchNum + " 試合</span><strong>" + hits + " Hits</strong>";
+          elHistoryList.appendChild(li);
+        });
+      }
+
+      var matches = historyData.length;
+      var total = historyData.reduce(function(a, b) { return a + b; }, 0);
+      var avg = matches > 0 ? (total / matches).toFixed(1) : "0.0";
+      var max = matches > 0 ? Math.max.apply(null, historyData) : 0;
+
+      if (elStatMatches) elStatMatches.textContent = matches;
+      if (elStatAvg) elStatAvg.textContent = avg;
+      if (elStatMax) elStatMax.textContent = max;
+    }
+
+    function addHit() {
+      currentMatchCount++;
+      updateDisplay();
+    }
+
+    function divideHit() {
+      if (currentMatchCount > 0) {
+        currentMatchCount = Math.floor(currentMatchCount / 2);
+        updateDisplay();
+      }
+    }
+
+    function addFiveHits() {
+      currentMatchCount += 5;
+      updateDisplay();
+    }
+
+    function undoHit() {
+      if (currentMatchCount > 0) {
+        currentMatchCount--;
+        updateDisplay();
+      }
+    }
+
+    function saveMatch() {
+      historyData.push(currentMatchCount);
+      saveStorage("hastur_history", JSON.stringify(historyData));
+      
+      baseTotalHits += currentMatchCount;
+      saveStorage("hastur_base_total", baseTotalHits.toString());
+
+      currentMatchCount = 0;
+      updateDisplay();
+      updateHistoryUI();
+    }
+
+    function resetCurrentCounts() {
+      if (confirm("現在の試合とヒット数の表示を0にクリアしますか？（過去の試合履歴は残ります）")) {
+        currentMatchCount = 0;
+        baseTotalHits = 0;
+        saveStorage("hastur_base_total", "0");
+        updateDisplay();
+      }
+    }
+
+    function setGoal() {
+      if (!elGoalInput) return;
+      var val = parseInt(elGoalInput.value, 10);
+      if (!isNaN(val) && val > 0) {
+        targetGoal = val;
+        saveStorage("hastur_target_goal", targetGoal.toString());
+        updateDisplay();
+      }
+      elGoalInput.blur(); // 入力後にフォーカスを外してショートカットキーを即座に有効化
+    }
+
+    if (elBtnHit) elBtnHit.addEventListener("click", addHit);
+    if (elBtnDivide) elBtnDivide.addEventListener("click", divideHit);
+    if (elBtnAddFive) elBtnAddFive.addEventListener("click", addFiveHits);
+    if (elBtnUndo) elBtnUndo.addEventListener("click", undoHit);
+    if (elBtnSave) elBtnSave.addEventListener("click", saveMatch);
+    if (elBtnReset) elBtnReset.addEventListener("click", resetCurrentCounts);
+    if (elBtnGoalSet) elBtnGoalSet.addEventListener("click", setGoal);
+
+    if (elGoalInput) {
+      elGoalInput.addEventListener("keydown", function(e) {
+        if (e.key === "Enter") {
+          setGoal();
+        }
+      });
+    }
+
+    window.addEventListener("keydown", function(e) {
+      var activeEl = document.activeElement;
+      if (activeEl && (activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA")) {
+        return; // 目標入力欄にカーソルがある間はショートカットをスキップ
+      }
+
+      if (e.code === "Space" || e.code === "Enter") {
+        e.preventDefault();
+        addHit();
+      } else if (e.code === "KeyZ" || e.code === "Backspace") {
+        e.preventDefault();
+        undoHit();
+      } else if (e.code === "KeyR") {
+        e.preventDefault();
+        saveMatch();
+      } else if (e.code === "KeyL") {
+        e.preventDefault();
+        resetCurrentCounts();
+      }
+    });
+
+    updateDisplay();
+    updateHistoryUI();
+  </script>
+</body>
+</html>
